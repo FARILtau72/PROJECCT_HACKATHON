@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asisten Keuangan UMKM</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #chat-header {
+            padding: 20px;
+            background-color: #4a90e2;
+            color: white;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 75%;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background-color: #e1f5fe;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            background-color: #f1f1f1;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-message.loading {
+            color: #888;
+            font-style: italic;
+        }
+
+        #chat-form {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 1em;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-label {
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        #send-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #4a90e2;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        #send-button:hover {
+            background-color: #357abd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chat-container">
+        <div id="chat-header">Asisten Keuangan UMKM</div>
+        <div id="chat-window">
+            <div class="message ai-message">Halo! Saya adalah asisten keuangan Anda. Ajukan pertanyaan atau unggah
+                dokumen (struk, laporan, foto, video) untuk dianalisis.</div>
+        </div>
+        <form id="chat-form">
+            <input type="text" id="message-input" placeholder="Ketik pesan Anda..." autocomplete="off">
+            <label for="file-input" id="file-label" title="Lampirkan file">📎</label>
+            <input type="file" id="file-input" accept=".txt,.pdf,.png,.jpg,.jpeg,.mp4,.mov,.avi">
+            <button type="submit" id="send-button">Kirim</button>
+        </form>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const fileInput = document.getElementById('file-input');
+        const chatWindow = document.getElementById('chat-window');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            const file = fileInput.files[0];
+
+            if (!message && !file) return;
+
+            // Tampilkan pesan pengguna
+            let userMessageHTML = `<div class="message user-message">${message}`;
+            if (file) {
+                userMessageHTML += `<br><small><i>File: ${file.name}</i></small>`;
+            }
+            userMessageHTML += `</div>`;
+            chatWindow.innerHTML += userMessageHTML;
+
+            // Tampilkan status loading
+            const loadingId = 'loading-' + Date.now();
+            chatWindow.innerHTML += `<div id="${loadingId}" class="message ai-message loading">Menganalisis...</div>`;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            // Siapkan data untuk dikirim
+            const formData = new FormData();
+            formData.append('message', message);
+            if (file) {
+                formData.append('file', file);
+            }
+
+            // Kirim ke backend
+            const response = await fetch('http://localhost:8000/api/chat', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            // Ganti pesan loading dengan balasan AI
+            const loadingElement = document.getElementById(loadingId);
+            loadingElement.classList.remove('loading');
+            loadingElement.innerHTML = data.reply.replace(/\n/g, '<br>'); // Ganti newline dengan <br>
+
+            // Reset input
+            messageInput.value = '';
+            fileInput.value = '';
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+    </script>
+
+</body>
+
+</html>
