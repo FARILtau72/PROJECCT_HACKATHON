@@ -107,9 +107,6 @@ The API provides the following endpoints:
 └── README.md            # Project documentation
 ```
 
-## 📸 Screenshots
-
-
 
 ## 🤝 Contributing
 
